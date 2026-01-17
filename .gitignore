@@ -1,0 +1,76 @@
+# ============================================================================
+# HPC Coursework .gitignore
+# ============================================================================
+
+# Build artifacts
+build/
+*.o
+*.a
+*.so
+*.out
+advection2D
+result
+result-*
+
+# Executable (if built in root)
+/advection2D
+
+# Data files (coursework output)
+*.dat
+initial.dat
+final.dat
+
+# Plot files
+*.png
+*.pdf
+*.eps
+*.svg
+
+# Profiling output
+gmon.out
+perf.data
+perf.data.old
+*.gcda
+*.gcno
+*.gcov
+
+# Valgrind output
+vgcore.*
+*.log
+
+# Core dumps
+core
+core.*
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Nix/direnv
+.direnv/
+# Note: .envrc is committed (safe, no secrets)
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# Compressed files (unless needed for submission)
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Documentation build
+docs/html/
+docs/latex/
+doxygen_warnings.txt
+
+# Submission archive (optional - uncomment if you want to ignore)
+# submission.zip
+# submission.tar.gz
+.editorconfig
