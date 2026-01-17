@@ -15,7 +15,7 @@
 
   # Static analysis and linting
   cppcheck,
-  clang-tools_17, # For clang-format, clang-tidy (C compatible)
+  clang-tools, # For clang-format, clang-tidy (C compatible)
 
 
   # Code formatting
@@ -43,19 +43,14 @@ mkShellNoCC {
     # Debugging
     gdb # GNU debugger
     valgrind # Memory error detection
-    strace # System call tracer
     ltrace # Library call tracer
 
     # Static analysis and linting
     cppcheck # C/C++ static analyzer
-    clang-tools_17 # clang-format, clang-tidy for C code
+    clang-tools # clang-format, clang-tidy for C code
 
     # Code formatting
     astyle # Artistic Style code formatter
-
-    # Performance profiling
-    linuxPackages.perf # Linux performance profiler
-    htop # Interactive process viewer
 
     # Documentation
     doxygen # Generate docs from comments
@@ -70,7 +65,6 @@ mkShellNoCC {
     echo "  • gdb, valgrind (debugging)"
     echo "  • cppcheck, clang-tidy (static analysis)"
     echo "  • clang-format, astyle (code formatting)"
-    echo "  • perf, htop (performance profiling)"
     echo "  • gnuplot (plotting)"
     echo "  • doxygen (documentation)"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
