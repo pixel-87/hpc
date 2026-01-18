@@ -87,18 +87,23 @@ int main(){
 
   /*** Place x points in the middle of the cell ***/
   /* LOOP 1 */
+  int i;
+  #pragma omp parallel for default(none) shared(x, dx) private(i)
   for (int i=0; i<NX+2; i++){
     x[i] = ( (float) i - 0.5) * dx;
   }
 
   /*** Place y points in the middle of the cell ***/
   /* LOOP 2 */
+  int j;
+  #pragma omp parallel for default(none) shared(y, dy) private(j)
   for (int j=0; j<NY+2; j++){
     y[j] = ( (float) j - 0.5) * dy;
   }
 
   /*** Set up Gaussian initial conditions ***/
   /* LOOP 3 */
+  #pragma omp parallel for default(none) shared(x, y, x0, y0, u, sigmax2, sigmay2) private(i, j, x2, y2)
   for (int i=0; i<NX+2; i++){
     for (int j=0; j<NY+2; j++){
       x2      = (x[i]-x0) * (x[i]-x0);
@@ -111,6 +116,11 @@ int main(){
   FILE *initialfile;
   initialfile = fopen("initial.dat", "w");
   /* LOOP 4 */
+  /* Cannot be parallelised. fprintf is not thread-safe.
+   * Writing data in parallel to a shared file pointer results in race conditions.
+   * Multiple threads would be trying to write to the same lines.
+   * Data would become garbled/corrupted.
+  */
   for (int i=0; i<NX+2; i++){
     for (int j=0; j<NY+2; j++){
       fprintf(initialfile, "%g %g %g\n", x[i], y[j], u[i][j]);
@@ -120,10 +130,17 @@ int main(){
 
   /*** Update solution by looping over time steps ***/
   /* LOOP 5 */
+  /* Cannot be parallelised.
+   * Since data is both read in from and altered in place in the array `u` parallelising would
+   * result in race conditions.
+   * For this loop to be parallelised, the state of the array would have to not
+   * be altered between iterations.
+  */
   for (int m=0; m<nsteps; m++){
 
     /*** Apply boundary conditions at u[0][:] and u[NX+1][:] ***/
     /* LOOP 6 */
+    #pragma omp parallel for default(none) shared(u, bval_left, bval_right) private(j)
     for (int j=0; j<NY+2; j++){
       u[0][j]    = bval_left;
       u[NX+1][j] = bval_right;
@@ -131,6 +148,7 @@ int main(){
 
     /*** Apply boundary conditions at u[:][0] and u[:][NY+1] ***/
     /* LOOP 7 */
+    #pragma omp parallel for default(none) shared(u, bval_lower, bval_upper) private(i)
     for (int i=0; i<NX+2; i++){
       u[i][0]    = bval_lower;
       u[i][NY+1] = bval_upper;
@@ -139,6 +157,7 @@ int main(){
     /*** Calculate rate of change of u using leftward difference ***/
     /* Loop over points in the domain but not boundary values */
     /* LOOP 8 */
+    #pragma omp parallel for default(none) shared(velx, dx, vely, dy, dudt, u, NX, NY) private(i, j)
     for (int i=1; i<NX+1; i++){
       for (int j=1; j<NY+1; j++){
 	dudt[i][j] = -velx * (u[i][j] - u[i-1][j]) / dx
@@ -149,6 +168,7 @@ int main(){
     /*** Update u from t to t+dt ***/
     /* Loop over points in the domain but not boundary values */
     /* LOOP 9 */
+    #pragma omp parallel for default(none) shared(u, NX, NY, dudt, dt) private(i, j)
     for	(int i=1; i<NX+1; i++){
       for (int j=1; j<NY+1; j++){
 	u[i][j] = u[i][j] + dudt[i][j] * dt;
@@ -161,6 +181,13 @@ int main(){
   FILE *finalfile;
   finalfile = fopen("final.dat", "w");
   /* LOOP 10 */
+  /*
+   * Same as LOOP 4, Cannot be parallelised.
+   * fprintf is not thread-safe.
+   * Writing data in parallel to a shared file pointer results in race conditions.
+   * Multiple threads would be trying to write to the same lines.
+   * Data would become garbled/corrupted.
+  */
   for (int i=0; i<NX+2; i++){
     for (int j=0; j<NY+2; j++){
       fprintf(finalfile, "%g %g %g\n", x[i], y[j], u[i][j]);
