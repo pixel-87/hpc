@@ -57,6 +57,10 @@ int main(){
   const float velx=1.00; // Velocity in x direction
   const float vely=0.00; // Velocity in y direction
 
+  const float u_star=0.2; // friction velocity
+  const float z0=1.0; // roughness length
+  const float k=0.41; // Von Karman constant
+
   /* Arrays to store variables. These have NX+2 elements
      to allow boundary values to be stored at both ends */
   float x[NX+2];          // x-axis values
@@ -73,17 +77,20 @@ int main(){
 
   /* Calculate time step using the CFL condition */
   /* The fabs function gives the absolute value in case the velocity is -ve */
-  float dt = CFL / ( (fabs(velx) / dx) + (fabs(vely) / dy) );
+  float vel_max = (u_star / k) * log(ymax / z0);
+  float dt = CFL / ( (fabs(vel_max) / dx) + (fabs(vely) / dy) );
 
   /*** Report information about the calculation ***/
-  printf("Grid spacing dx     = %g\n", dx);
-  printf("Grid spacing dy     = %g\n", dy);
-  printf("CFL number          = %g\n", CFL);
-  printf("Time step           = %g\n", dt);
-  printf("No. of time steps   = %d\n", nsteps);
-  printf("End time            = %g\n", dt*(float) nsteps);
-  printf("Distance advected x = %g\n", velx*dt*(float) nsteps);
-  printf("Distance advected y = %g\n", vely*dt*(float) nsteps);
+  printf("Max velocity (vel_max) = %g\n", vel_max);
+  printf("Grid spacing dx        = %g\n", dx);
+  printf("Grid spacing dy        = %g\n", dy);
+  printf("CFL number             = %g\n", CFL);
+  printf("Time step              = %g\n", dt);
+  printf("No. of time steps      = %d\n", nsteps);
+  printf("End time               = %g\n", dt*(float) nsteps);
+  printf("below is using const vel from before task 2.3\n");
+  printf("Distance advected x    = %g\n", velx*dt*(float) nsteps);
+  printf("Distance advected y    = %g\n", vely*dt*(float) nsteps);
 
   /*** Place x points in the middle of the cell ***/
   /* LOOP 1 */
@@ -157,14 +164,21 @@ int main(){
     /*** Calculate rate of change of u using leftward difference ***/
     /* Loop over points in the domain but not boundary values */
     /* LOOP 8 */
-    #pragma omp parallel for default(none) shared(velx, dx, vely, dy, dudt, u, NX, NY) private(i, j)
+    float local_velx;
+    #pragma omp parallel for default(none) shared(y, dx, vely, dy, dudt, u, NX, NY, z0, u_star, k) private(i, j, local_velx)
     for (i=1; i<NX+1; i++){
       for (j=1; j<NY+1; j++){
-	dudt[i][j] = -velx * (u[i][j] - u[i-1][j]) / dx
-	            - vely * (u[i][j] - u[i][j-1]) / dy;
+        if (y[j] <= z0) {
+          // Assuming 0 wind under z0 (1m)
+          local_velx = 0.0;
+        } else {
+          local_velx = (u_star / k) * log(y[j] / z0);
+        }
+
+        dudt[i][j] = -local_velx * (u[i][j] - u[i-1][j]) / dx
+                    - vely * (u[i][j] - u[i][j-1]) / dy;
       }
     }
-
     /*** Update u from t to t+dt ***/
     /* Loop over points in the domain but not boundary values */
     /* LOOP 9 */
