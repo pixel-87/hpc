@@ -209,6 +209,21 @@ int main(){
   }
   fclose(finalfile);
 
+  FILE *avgfile;
+  avgfile = fopen("average.dat", "w");
+  float vertical_sum;
+  float vertical_avg;
+  for (i = 1; i < NX + 1; i++) {
+    vertical_sum = 0.0;
+    for (j = 1; j < NY + 1; j++) {
+      vertical_sum += u[i][j];
+    }
+    vertical_avg = vertical_sum / (float)NY;
+
+    fprintf(avgfile, "%g %g\n", x[i], vertical_avg);
+  }
+  fclose(avgfile);
+
   return 0;
 }
 
